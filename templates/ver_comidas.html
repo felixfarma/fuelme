@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Comidas del {{ fecha }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+</head>
+<body>
+  <h1>Comidas registradas – {{ fecha }}</h1>
+
+  {% if comidas %}
+    <ul>
+      {% for comida in comidas %}
+        <li>
+          <h2>{{ comida.nombre_comida }}</h2>
+          {% if comida.ingredientes %}
+            <table border="1" cellpadding="4" cellspacing="0">
+              <thead>
+                <tr>
+                  <th>Ingrediente</th>
+                  <th>Cant. (g)</th>
+                  <th>Calorías</th>
+                  <th>CHO (g)</th>
+                  <th>Proteínas (g)</th>
+                  <th>Grasas (g)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for ing in comida.ingredientes %}
+                  <tr>
+                    <td>{{ ing.nombre }}</td>
+                    <td>{{ ing.cantidad }}</td>
+                    <td>{{ ing.calorias }}</td>
+                    <td>{{ ing.carbohidratos }}</td>
+                    <td>{{ ing.proteinas }}</td>
+                    <td>{{ ing.grasas }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p><em>Sin ingredientes registrados.</em></p>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No has registrado ninguna comida para hoy.</p>
+  {% endif %}
+
+  <p>
+    <a href="{{ url_for('guardar_comida') }}">➕ Añadir otra comida</a><br>
+    <a href="{{ url_for('calculadora') }}">← Volver a la calculadora</a>
+  </p>
+</body>
+</html>

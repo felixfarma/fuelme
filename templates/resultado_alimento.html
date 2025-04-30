@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Resultado de Alimento</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+</head>
+<body>
+    <h1>Resultado de la Comida</h1>
+    
+    <h3>Alimento: {{ nombre }}</h3>
+    <p><strong>Cantidad:</strong> {{ cantidad }} gramos</p>
+    <p><strong>Calorías:</strong> {{ calorias }} kcal</p>
+    <p><strong>Proteínas:</strong> {{ proteinas }} g</p>
+    <p><strong>Carbohidratos:</strong> {{ carbohidratos }} g</p>
+    <p><strong>Grasas:</strong> {{ grasas }} g</p>
+
+    <br>
+    <a href="/">🔁 Volver al inicio</a>
+</body>
+</html>

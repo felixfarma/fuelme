@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Bienvenido</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+</head>
+<body>
+  <div class="form-container">
+    <h1>Bienvenido a la Calculadora Nutricional</h1>
+    <p style="text-align:center; margin-top:16px;">
+      <a href="{{ url_for('login') }}">➤ Iniciar sesión</a><br>
+      <a href="{{ url_for('registro') }}">➤ Registrarse</a>
+    </p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Resultado</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+</head>
+<body>
+    <h1>Resultado de tu cálculo</h1>
+
+    <!-- Mostrar necesidades básicas (result_base) siempre -->
+    <h2>Necesidades básicas</h2>
+    <ul>
+        <li><strong>Calorías básicas:</strong> {{ result_base['Total Calories'] }} kcal</li>
+        <li><strong>Hidratos de carbono (CHO):</strong> {{ result_base['CHO'] }} g</li>
+        <li><strong>Proteínas:</strong> {{ result_base['Protein'] }} g</li>
+        <li><strong>Grasas:</strong> {{ result_base['Fat'] }} g</li>
+    </ul>
+
+    <!-- Mostrar el reparto energético a lo largo del día -->
+    <h2>Reparto energético del día</h2>
+    <ul>
+        <li><strong>Desayuno:</strong> {{ result_base['Desayuno Calories'] }} kcal ({{ result_base['Desayuno Calories'] / result_base['Total Calories'] * 100 }}%)</li>
+        <li><strong>Almuerzo:</strong> {{ result_base['Almuerzo Calories'] }} kcal ({{ result_base['Almuerzo Calories'] / result_base['Total Calories'] * 100 }}%)</li>
+        <li><strong>Comida:</strong> {{ result_base['Comida Calories'] }} kcal ({{ result_base['Comida Calories'] / result_base['Total Calories'] * 100 }}%)</li>
+        <li><strong>Cena:</strong> {{ result_base['Cena Calories'] }} kcal ({{ result_base['Cena Calories'] / result_base['Total Calories'] * 100 }}%)</li>
+    </ul>
+
+    <!-- Mostrar necesidades ajustadas solo si el ejercicio es mayor a 1h -->
+    {% if result %}
+    <h2>Necesidades ajustadas (con ejercicio)</h2>
+    <ul>
+        <li><strong>Calorías ajustadas:</strong> {{ result['Total Calories'] }} kcal</li>
+        <li><strong>Hidratos de carbono (CHO):</strong> {{ result['CHO'] }} g</li>
+        <li><strong>Proteínas:</strong> {{ result['Protein'] }} g</li>
+        <li><strong>Grasas:</strong> {{ result['Fat'] }} g</li>
+    </ul>
+    {% endif %}
+    
+    <a href="/">Volver al formulario</a>
+</body>
+</html>

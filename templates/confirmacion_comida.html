@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Comida Guardada</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+</head>
+<body>
+  <h1>¡Comida “{{ nombre_comida }}” guardada con éxito!</h1>
+  <p>La hemos añadido a tu perfil en la fecha de hoy.</p>
+  <p>
+    <a href="{{ url_for('guardar_comida') }}">Añadir otra comida</a><br>
+    <a href="{{ url_for('calculadora') }}">Volver a la calculadora</a>
+  </p>
+</body>
+</html>

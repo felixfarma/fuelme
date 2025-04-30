@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Guardar Comida</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+</head>
+<body>
+  <h1>Guardar una nueva comida</h1>
+  <form action="{{ url_for('guardar_comida') }}" method="POST">
+    <label>Nombre de la comida:
+      <input type="text" name="nombre_comida" required>
+    </label><br><br>
+
+    {% for i in range(1,4) %}
+    <fieldset>
+      <legend>Ingrediente {{ i }}</legend>
+      <label>Nombre:
+        <input type="text" name="ingrediente{{ i }}">
+      </label><br>
+      <label>Cantidad (g):
+        <input type="number" step="0.1" name="cantidad{{ i }}">
+      </label><br>
+      <label>Calorías:
+        <input type="number" step="0.1" name="calorias{{ i }}">
+      </label><br>
+      <label>Carbohidratos (g):
+        <input type="number" step="0.1" name="carbohidratos{{ i }}">
+      </label><br>
+      <label>Proteínas (g):
+        <input type="number" step="0.1" name="proteinas{{ i }}">
+      </label><br>
+      <label>Grasas (g):
+        <input type="number" step="0.1" name="grasas{{ i }}">
+      </label>
+    </fieldset>
+    <br>
+    {% endfor %}
+
+    <button type="submit">Guardar comida</button>
+  </form>
+  <p><a href="{{ url_for('calculadora') }}">← Volver a la calculadora</a></p>
+</body>
+</html>

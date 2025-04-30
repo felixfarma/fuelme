@@ -1,0 +1,14 @@
+{
+    "felix.romib@gmail.com": {
+        "nombre": "felix",
+        "email": "felix.romib@gmail.com",
+        "contrasena": "highscreen",
+        "fecha_nacimiento": "1982-11-16",
+        "edad": 42,
+        "sexo": "male",
+        "altura": 173.0,
+        "peso": null,
+        "actividad": "sedentary",
+        "comidas_diarias": {}
+    }
+}

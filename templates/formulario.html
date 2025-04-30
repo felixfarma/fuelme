@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Calculadora Nutricional</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+</head>
+<body>
+    <h1>Calculadora Nutricional para Deportistas</h1>
+    {% if aviso %}
+    <p style="color: darkorange; font-weight: bold;">{{ aviso }}</p>
+{% endif %}
+    <!-- Enlaces para registro y carga de perfil -->
+    <div style="margin-bottom: 20px;">
+        <a href="/registro">📝 Crear nuevo perfil</a> |
+        <a href="/cargar_perfil">🔓 Cargar perfil guardado</a>
+    </div>
+
+    <form action="/resultado" method="POST">
+        <label>Peso (kg): 
+            <input type="number" name="weight" step="0.1" 
+                   value="{{ session['perfil']['peso'] if session.get('perfil') else '' }}" required>
+        </label><br>
+
+        <label>Altura (cm): 
+            <input type="number" name="height" 
+                   value="{{ session['perfil']['altura'] if session.get('perfil') else '' }}" required>
+        </label><br>
+
+        <label>Edad: 
+            <input type="number" name="age" 
+                   value="{{ session['perfil']['edad'] if session.get('perfil') else '' }}" required>
+        </label><br>
+
+        <label>Sexo:
+            <select name="sex" required>
+                <option value="male" {% if session.get('perfil') and session['perfil']['sexo'] == 'male' %}selected{% endif %}>Hombre</option>
+                <option value="female" {% if session.get('perfil') and session['perfil']['sexo'] == 'female' %}selected{% endif %}>Mujer</option>
+            </select>
+        </label><br>
+
+        <label>Nivel de actividad diaria:
+            <select name="activity_level">
+                <option value="sedentary">Sedentario</option>
+                <option value="lightly_active">Ligeramente activo</option>
+                <option value="moderately_active">Moderadamente activo</option>
+                <option value="very_active">Muy activo</option>
+                <option value="extra_active">Extremadamente activo</option>
+            </select>
+        </label><br>
+
+        <h3>Ciclismo</h3>
+        <label>Horas: <input type="number" name="bike_hrs" step="0.1"></label><br>
+        <label>Potencia media (w): <input type="number" name="bike_power"></label><br>
+        <label>Umbral funcional (FTP): <input type="number" name="bike_threshold"></label><br>
+
+        <h3>Carrera</h3>
+        <label>Horas: <input type="number" name="run_hrs" step="0.1"></label><br>
+        <label>Ritmo (min/km): <input type="number" name="run_pace" step="0.1"></label><br>
+        <label>Umbral (min/km): <input type="number" name="run_threshold" step="0.1"></label><br>
+
+        <label>Objetivo:
+            <select name="weight_loss">
+                <option value="no">Mantener peso</option>
+                <option value="yes">Perder peso</option>
+                <option value="gain">Ganar peso</option>
+            </select>
+        </label><br><br>
+
+        <button type="submit">Calcular Plan Nutricional</button>
+    </form>
+</body>
+</html>

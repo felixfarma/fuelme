@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Añadir Alimento</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+</head>
+<body>
+  <h1>Añadir Alimento Manual</h1>
+  <form action="{{ url_for('agregar_alimento') }}" method="post">
+    <label>Nombre: <input type="text" name="nombre" required></label><br>
+    <label>Calorías /100g: <input type="number" name="calorias" step="0.1" required></label><br>
+    <label>Carbohidratos /100g: <input type="number" name="carbohidratos" step="0.1" required></label><br>
+    <label>Proteínas /100g: <input type="number" name="proteinas" step="0.1" required></label><br>
+    <label>Grasas /100g: <input type="number" name="grasas" step="0.1" required></label><br>
+    <button type="submit">Guardar</button>
+  </form>
+  <p><a href="{{ url_for('ver_alimentos') }}">← Ver alimentos</a></p>
+  <p><a href="{{ url_for('calculadora') }}">← Volver</a></p>
+</body>
+</html>

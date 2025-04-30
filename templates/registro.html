@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro – App Nutricional</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-ENjdO4Dr2bkBIFxQpeoA6VJWcV5T2v9uWh9eqEFB1XMcVdAyjUar5+76PVCmYl"
+    crossorigin="anonymous"
+  />
+  <!-- Opcional: tu propio estilo -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+</head>
+<body class="bg-light">
+
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-6 col-lg-5">
+
+        <div class="card shadow-sm mt-5">
+          <div class="card-body p-4">
+            <h1 class="card-title text-center mb-3">Crear cuenta</h1>
+            {% if error %}
+              <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+
+            <form method="post" novalidate>
+              <div class="mb-3">
+                <label for="nombre" class="form-label">Nombre completo</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="nombre"
+                  name="nombre"
+                  value="{{ request.form.nombre or '' }}"
+                  placeholder="Tu nombre"
+                  required
+                >
+              </div>
+
+              <div class="mb-3">
+                <label for="email" class="form-label">Correo electrónico</label>
+                <input
+                  type="email"
+                  class="form-control"
+                  id="email"
+                  name="email"
+                  value="{{ request.form.email or '' }}"
+                  placeholder="ejemplo@dominio.com"
+                  required
+                >
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="contrasena" class="form-label">Contraseña</label>
+                  <input
+                    type="password"
+                    class="form-control"
+                    id="contrasena"
+                    name="contrasena"
+                    placeholder="••••••••"
+                    required
+                  >
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="contrasena_confirm" class="form-label">Repetir contraseña</label>
+                  <input
+                    type="password"
+                    class="form-control"
+                    id="contrasena_confirm"
+                    name="contrasena_confirm"
+                    placeholder="••••••••"
+                    required
+                  >
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="fecha_nacimiento" class="form-label">Fecha de nacimiento</label>
+                <input
+                  type="date"
+                  class="form-control"
+                  id="fecha_nacimiento"
+                  name="fecha_nacimiento"
+                  value="{{ request.form.fecha_nacimiento or '' }}"
+                  required
+                >
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="sexo" class="form-label">Sexo</label>
+                  <select class="form-select" id="sexo" name="sexo" required>
+                    <option value="" disabled {{ not request.form.get('sexo') and 'selected' }}>Selecciona...</option>
+                    <option value="male"   {{ request.form.get('sexo')=='male'   and 'selected' }}>Hombre</option>
+                    <option value="female" {{ request.form.get('sexo')=='female' and 'selected' }}>Mujer</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="actividad" class="form-label">Nivel de actividad</label>
+                  <select class="form-select" id="actividad" name="actividad" required>
+                    <option value="sedentary"       {{ request.form.get('actividad','sedentary')=='sedentary' and 'selected' }}>Sedentario</option>
+                    <option value="lightly_active"  {{ request.form.get('actividad')=='lightly_active' and 'selected' }}>Poco activo</option>
+                    <option value="moderately_active"{{ request.form.get('actividad')=='moderately_active' and 'selected' }}>Moderadamente activo</option>
+                    <option value="very_active"     {{ request.form.get('actividad')=='very_active' and 'selected' }}>Muy activo</option>
+                    <option value="extra_active"    {{ request.form.get('actividad')=='extra_active' and 'selected' }}>Extra activo</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <label for="altura" class="form-label">Altura (cm)</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="altura"
+                  name="altura"
+                  step="0.1"
+                  value="{{ request.form.altura or '' }}"
+                  placeholder="p.ej. 173"
+                  required
+                >
+              </div>
+
+              <button type="submit" class="btn btn-primary w-100">Registrarse</button>
+            </form>
+          </div>
+
+          <div class="card-footer text-center py-3 bg-transparent">
+            ¿Ya tienes cuenta?
+            <a href="{{ url_for('login') }}">Inicia sesión</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS (opcional, para componentes) -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+AMvyTG2xUksdQRVvoxMfooAo5HI+"
+    crossorigin="anonymous"
+  ></script>
+</body>
+</html>
