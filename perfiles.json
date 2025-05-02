@@ -1,14 +1,46 @@
 {
     "felix.romib@gmail.com": {
-        "nombre": "FELIX",
-        "email": "felix.romib@gmail.com",
-        "contrasena": "HIGHSCREEN",
-        "fecha_nacimiento": "1982-11-16",
-        "edad": 42,
-        "sexo": "male",
-        "altura": 173.0,
-        "peso": 70.0,
         "actividad": "sedentary",
-        "comidas_diarias": {}
+        "altura": 173.0,
+        "comidas_diarias": {
+            "2025-05-02": [
+                {
+                    "nombre_comida": "tostada queso y pavo",
+                    "ingredientes": [
+                        {
+                            "nombre": "pan 5 cereales",
+                            "cantidad": 100.0,
+                            "calorias": 266.0,
+                            "carbohidratos": 53.0,
+                            "proteinas": 8.2,
+                            "grasas": 1.8
+                        },
+                        {
+                            "nombre": "queso fresco consum",
+                            "cantidad": 100.0,
+                            "calorias": 210.0,
+                            "carbohidratos": 4.0,
+                            "proteinas": 11.0,
+                            "grasas": 15.0
+                        },
+                        {
+                            "nombre": "pavo lonchas",
+                            "cantidad": 50.0,
+                            "calorias": 270.0,
+                            "carbohidratos": 18.0,
+                            "proteinas": 36.0,
+                            "grasas": 6.0
+                        }
+                    ]
+                }
+            ]
+        },
+        "contrasena": "HIGHSCREEN",
+        "edad": 42,
+        "email": "felix.romib@gmail.com",
+        "fecha_nacimiento": "1982-11-16",
+        "nombre": "FELIX",
+        "peso": 70.0,
+        "sexo": "male"
     }
 }

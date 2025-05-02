@@ -3,54 +3,106 @@
 <head>
   <meta charset="UTF-8">
   <title>Comidas del {{ fecha }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
   <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
 </head>
-<body>
-  <h1>Comidas registradas – {{ fecha }}</h1>
+<body class="bg-light">
+
+<div class="container py-4">
+
+  <h1 class="mb-4">Comidas registradas – {{ fecha }}</h1>
 
   {% if comidas %}
-    <ul>
-      {% for comida in comidas %}
-        <li>
-          <h2>{{ comida.nombre_comida }}</h2>
-          {% if comida.ingredientes %}
-            <table border="1" cellpadding="4" cellspacing="0">
-              <thead>
-                <tr>
-                  <th>Ingrediente</th>
-                  <th>Cant. (g)</th>
-                  <th>Calorías</th>
-                  <th>CHO (g)</th>
-                  <th>Proteínas (g)</th>
-                  <th>Grasas (g)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for ing in comida.ingredientes %}
-                  <tr>
-                    <td>{{ ing.nombre }}</td>
-                    <td>{{ ing.cantidad }}</td>
-                    <td>{{ ing.calorias }}</td>
-                    <td>{{ ing.carbohidratos }}</td>
-                    <td>{{ ing.proteinas }}</td>
-                    <td>{{ ing.grasas }}</td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          {% else %}
-            <p><em>Sin ingredientes registrados.</em></p>
-          {% endif %}
-        </li>
+    {# Calculamos totales #}
+    {% set tot_cal = 0 %}
+    {% set tot_cho = 0 %}
+    {% set tot_pro = 0 %}
+    {% set tot_fat = 0 %}
+    {% for comida in comidas %}
+      {% for ing in comida.ingredientes %}
+        {% set tot_cal = tot_cal + ing.calorias %}
+        {% set tot_cho = tot_cho + ing.carbohidratos %}
+        {% set tot_pro = tot_pro + ing.proteinas %}
+        {% set tot_fat = tot_fat + ing.grasas %}
       {% endfor %}
-    </ul>
+    {% endfor %}
+
+    <div class="mb-4">
+      <h2 class="h5">Total consumido hoy</h2>
+      <ul class="list-inline">
+        <li class="list-inline-item"><strong>Calorías:</strong> {{ tot_cal }}</li>
+        <li class="list-inline-item"><strong>CHO:</strong> {{ tot_cho }} g</li>
+        <li class="list-inline-item"><strong>Proteínas:</strong> {{ tot_pro }} g</li>
+        <li class="list-inline-item"><strong>Grasas:</strong> {{ tot_fat }} g</li>
+      </ul>
+    </div>
+
+    <div class="row gy-4">
+      {% for comida in comidas %}
+        <div class="col-md-6">
+          <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+              {{ comida.nombre_comida }}
+            </div>
+            <div class="card-body p-0">
+              {% if comida.ingredientes %}
+                <table class="table table-sm mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Ingrediente</th>
+                      <th>g</th>
+                      <th>kcal</th>
+                      <th>CHO</th>
+                      <th>Prot</th>
+                      <th>Fat</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for ing in comida.ingredientes %}
+                      <tr>
+                        <td>{{ ing.nombre }}</td>
+                        <td>{{ ing.cantidad }}</td>
+                        <td>{{ ing.calorias }}</td>
+                        <td>{{ ing.carbohidratos }}</td>
+                        <td>{{ ing.proteinas }}</td>
+                        <td>{{ ing.grasas }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              {% else %}
+                <p class="p-3 mb-0"><em>Sin ingredientes registrados.</em></p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
   {% else %}
-    <p>No has registrado ninguna comida para hoy.</p>
+    <div class="alert alert-info">
+      No has registrado ninguna comida para hoy.
+    </div>
   {% endif %}
 
-  <p>
-    <a href="{{ url_for('guardar_comida') }}">➕ Añadir otra comida</a><br>
-    <a href="{{ url_for('calculadora') }}">← Volver a la calculadora</a>
-  </p>
+  <div class="mt-4">
+    <a href="{{ url_for('guardar_comida') }}" class="btn btn-primary me-2">
+      ➕ Añadir comida
+    </a>
+    <a href="{{ url_for('calculadora') }}" class="btn btn-secondary">
+      ← Volver a la calculadora
+    </a>
+  </div>
+
+</div>
+
+<!-- Bootstrap JS -->
+<script
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+</script>
 </body>
 </html>

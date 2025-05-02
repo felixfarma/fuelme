@@ -10,7 +10,6 @@
     rel="stylesheet"
   >
   <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-light">
 
@@ -27,11 +26,11 @@
     <div class="col-sm-4">
       <label for="actividad" class="form-label">Actividad</label>
       <select name="actividad" id="actividad" class="form-select" required>
-        <option value="sedentary"        {{ perfil.actividad=='sedentary' and 'selected' }}>Sedentario</option>
-        <option value="lightly_active"   {{ perfil.actividad=='lightly_active' and 'selected' }}>Poco activo</option>
-        <option value="moderately_active"{{ perfil.actividad=='moderately_active' and 'selected' }}>Moderadamente activo</option>
-        <option value="very_active"      {{ perfil.actividad=='very_active' and 'selected' }}>Muy activo</option>
-        <option value="extra_active"     {{ perfil.actividad=='extra_active' and 'selected' }}>Extra activo</option>
+        <option value="sedentary"         {{ perfil.actividad=='sedentary' and 'selected' }}>Sedentario</option>
+        <option value="lightly_active"    {{ perfil.actividad=='lightly_active' and 'selected' }}>Poco activo</option>
+        <option value="moderately_active" {{ perfil.actividad=='moderately_active' and 'selected' }}>Moderadamente activo</option>
+        <option value="very_active"       {{ perfil.actividad=='very_active' and 'selected' }}>Muy activo</option>
+        <option value="extra_active"      {{ perfil.actividad=='extra_active' and 'selected' }}>Extra activo</option>
       </select>
     </div>
     <div class="col-sm-4 text-end">
@@ -115,17 +114,29 @@
         <div class="col-md-6">
           <fieldset class="border p-2 mb-3">
             <legend class="w-auto px-2">Bicicleta</legend>
-            <label class="form-label">Horas:<input type="number" class="form-control mb-2" name="bike_hrs" step="0.1" value="0"></label>
-            <label class="form-label">Potencia (W):<input type="number" class="form-control mb-2" name="bike_power" step="1" value="0"></label>
-            <label class="form-label">FTP (W):<input type="number" class="form-control" name="bike_threshold" step="1" value="0"></label>
+            <label class="form-label">Horas:
+              <input type="number" class="form-control mb-2" name="bike_hrs" step="0.1" value="0">
+            </label>
+            <label class="form-label">Potencia (W):
+              <input type="number" class="form-control mb-2" name="bike_power" step="1" value="0">
+            </label>
+            <label class="form-label">FTP (W):
+              <input type="number" class="form-control" name="bike_threshold" step="1" value="0">
+            </label>
           </fieldset>
         </div>
         <div class="col-md-6">
           <fieldset class="border p-2 mb-3">
             <legend class="w-auto px-2">Carrera</legend>
-            <label class="form-label">Horas:<input type="number" class="form-control mb-2" name="run_hrs" step="0.1" value="0"></label>
-            <label class="form-label">Ritmo (min/km):<input type="number" class="form-control mb-2" name="run_pace" step="0.1" value="0"></label>
-            <label class="form-label">Umbral:<input type="number" class="form-control" name="run_threshold" step="0.1" value="0"></label>
+            <label class="form-label">Horas:
+              <input type="number" class="form-control mb-2" name="run_hrs" step="0.1" value="0">
+            </label>
+            <label class="form-label">Ritmo (min/km):
+              <input type="number" class="form-control mb-2" name="run_pace" step="0.1" value="0">
+            </label>
+            <label class="form-label">Umbral:
+              <input type="number" class="form-control" name="run_threshold" step="0.1" value="0">
+            </label>
           </fieldset>
         </div>
       </div>

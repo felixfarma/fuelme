@@ -1,5 +1,5 @@
 import json
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session
 from datetime import datetime
 
 app = Flask(__name__)
@@ -51,6 +51,7 @@ def calculate_running_expenditure(pace, hrs, weight, economy=210):
 def calculate_cho(weight, threshold, intensity, hrs):
     if hrs == 0:
         return round(3 * weight)
+    # factor según umbral
     if threshold <= 200: cho = 10
     elif threshold <= 240: cho = 11
     elif threshold <= 270: cho = 12
@@ -62,11 +63,16 @@ def calculate_cho(weight, threshold, intensity, hrs):
     return round((tss * cho) / 4)
 
 def calculate_pro(weight, hrs, loss='no'):
-    if loss in ['yes','gain']: factor = 1
-    elif hrs < 1: factor = 0.7
-    elif hrs < 2: factor = 0.8
-    elif hrs < 2.5: factor = 0.9
-    else: factor = 1
+    if loss in ['yes','gain']:
+        factor = 1
+    elif hrs < 1:
+        factor = 0.7
+    elif hrs < 2:
+        factor = 0.8
+    elif hrs < 2.5:
+        factor = 0.9
+    else:
+        factor = 1
     return round(weight * 2.2 * factor)
 
 def get_my_nutrition_plan(w, h, age, sex, act,
@@ -82,11 +88,8 @@ def get_my_nutrition_plan(w, h, age, sex, act,
     run_kc  = calculate_running_expenditure(run_pace, run_hrs, w)
     tot_kc  = iee + bike_kc + run_kc
 
-    try: i_b = bike_power / bike_threshold
-    except: i_b = 0
-    try: i_r = run_threshold / run_pace
-    except: i_r = 0
-
+    i_b = bike_power / bike_threshold if bike_threshold else 0
+    i_r = run_threshold / run_pace    if run_pace     else 0
     hrs = bike_hrs + run_hrs
     avg_if = (i_b * bike_hrs + i_r * run_hrs) / hrs if hrs > 0 else 0
 
@@ -96,14 +99,16 @@ def get_my_nutrition_plan(w, h, age, sex, act,
 
     return {
         'Total Calories': round(tot_kc, 2),
-        'CHO': round(cho, 2),
-        'Protein': round(pro, 2),
-        'Fat': round(fat, 2)
+        'CHO':             round(cho,     2),
+        'Protein':         round(pro,     2),
+        'Fat':             round(fat,     2)
     }
 
 def parse_float(v):
-    try: return float(v)
-    except: return 0.0
+    try:
+        return float(v)
+    except:
+        return 0.0
 
 # ————— Autenticación —————
 
@@ -183,7 +188,7 @@ def calculadora():
 
     action = request.form.get('action')
 
-    # Actualizar perfil (peso/actividad)
+    # 1) Si venimos de “Guardar perfil”, actualizamos peso y actividad
     if action == 'update_profile':
         perfil['peso']      = parse_float(request.form.get('peso'))
         perfil['actividad'] = request.form.get('actividad','sedentary')
@@ -192,14 +197,14 @@ def calculadora():
         save_perfiles(perfiles)
         session['perfil'] = perfil
 
-    # Base del usuario
+    # 2) Preparamos datos usuario
     peso      = perfil.get('peso') or 0
     altura    = perfil.get('altura') or 0
-    edad      = perfil.get('edad') or 0
-    sexo      = perfil.get('sexo') or 'male'
+    edad      = perfil.get('edad')   or 0
+    sexo      = perfil.get('sexo')   or 'male'
     actividad = perfil.get('actividad') or 'sedentary'
 
-    # Plan basal (sin ejercicio) o ajustado
+    # 3) Calculamos plan (basal o con ejercicio)
     if action == 'exercise':
         bh = parse_float(request.form.get('bike_hrs'))
         bp = parse_float(request.form.get('bike_power'))
@@ -222,7 +227,7 @@ def calculadora():
             weight_loss='no'
         )
 
-    # Consumo hoy
+    # 4) Consumo y restante del día
     fecha = datetime.today().date().isoformat()
     perfil.setdefault('comidas_diarias', {})
     comidas = perfil['comidas_diarias'].get(fecha, [])
@@ -239,7 +244,8 @@ def calculadora():
         for k in ['Total Calories','CHO','Protein','Fat']
     }
 
-    return render_template('calculadora.html',
+    return render_template(
+        'calculadora.html',
         perfil=perfil,
         basal_plan=basal_plan,
         consumido=consumido,
@@ -247,24 +253,58 @@ def calculadora():
         fecha=fecha
     )
 
-# ————— Restaurar comidas —————
+# ————— Gestión de comidas —————
 
 @app.route('/guardar_comida', methods=['GET','POST'])
 def guardar_comida():
     perfil = session.get('perfil')
     if not perfil:
         return redirect(url_for('login'))
+    fecha   = datetime.today().date().isoformat()
     mensaje = None
-    # aquí podrías reimplementar la lógica de añadir ingredientes...
-    return render_template('guardar_comida.html', mensaje=mensaje)
+    if request.method == 'POST':
+        nombre       = request.form.get('nombre_comida','').strip()
+        ingredientes = []
+        # Acomoda aquí tantos ingredientes como quieras (1..3, 1..5…)
+        for i in range(1, 4):
+            ing  = request.form.get(f'ingrediente{i}','').strip()
+            cant = parse_float(request.form.get(f'cantidad{i}',0))
+            cal  = parse_float(request.form.get(f'calorias{i}',0))
+            carb = parse_float(request.form.get(f'carbohidratos{i}',0))
+            pro  = parse_float(request.form.get(f'proteinas{i}',0))
+            fat  = parse_float(request.form.get(f'grasas{i}',0))
+            if ing and cant and cal:
+                ingredientes.append({
+                    'nombre':        ing,
+                    'cantidad':      cant,
+                    'calorias':      cal,
+                    'carbohidratos': carb,
+                    'proteinas':     pro,
+                    'grasas':        fat
+                })
+
+        perfil.setdefault('comidas_diarias', {})\
+              .setdefault(fecha, []).append({
+                  'nombre_comida': nombre,
+                  'ingredientes':  ingredientes
+              })
+        perfiles = load_perfiles()
+        perfiles[perfil['email']] = perfil
+        save_perfiles(perfiles)
+        session['perfil'] = perfil
+        mensaje = f'Comida "{nombre}" guardada con éxito.'
+
+        
+    return render_template('guardar_comida.html', mensaje=mensaje, fecha=fecha)
+
 
 @app.route('/ver_comidas')
 def ver_comidas():
     perfil = session.get('perfil')
     if not perfil:
         return redirect(url_for('login'))
-    fecha = datetime.today().date().isoformat()
-    comidas = perfil.get('comidas_diarias', {}).get(fecha, [])
+    fecha   = datetime.today().date().isoformat()
+    comidas = perfil['comidas_diarias'].get(fecha, [])
     return render_template('ver_comidas.html', comidas=comidas, fecha=fecha)
 
 if __name__ == '__main__':
