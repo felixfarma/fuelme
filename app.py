@@ -114,7 +114,6 @@ def root():
 @app.route('/login', methods=['GET','POST'])
 def login():
     error = None
-    email = ''
     if request.method == 'POST':
         email = request.form.get('email','').lower().strip()
         pwd   = request.form.get('contrasena','')
@@ -124,7 +123,7 @@ def login():
             session['perfil'] = perfil
             return redirect(url_for('calculadora'))
         error = 'Email o contraseña incorrectos.'
-    return render_template('login.html', error=error, email=email)
+    return render_template('login.html', error=error)
 
 @app.route('/registro', methods=['GET','POST'])
 def registro():
@@ -138,6 +137,7 @@ def registro():
         sexo      = request.form.get('sexo','')
         altura    = request.form.get('altura','').strip()
         actividad = request.form.get('actividad','sedentary')
+        peso      = parse_float(request.form.get('peso',''))
 
         perfiles = load_perfiles()
         if email in perfiles:
@@ -150,16 +150,16 @@ def registro():
             edad = hoy.year - fn.year - ((hoy.month, hoy.day) < (fn.month, fn.day))
 
             perfil = {
-                'nombre':      nombre,
-                'email':       email,
-                'contrasena':  p1,
+                'nombre':           nombre,
+                'email':            email,
+                'contrasena':       p1,
                 'fecha_nacimiento': fnac,
-                'edad':        edad,
-                'sexo':        sexo,
-                'altura':      float(altura) if altura else 0.0,
-                'peso':        None,
-                'actividad':   actividad,
-                'comidas_diarias': {}
+                'edad':             edad,
+                'sexo':             sexo,
+                'altura':           float(altura) if altura else 0.0,
+                'peso':             peso,
+                'actividad':        actividad,
+                'comidas_diarias':  {}
             }
             perfiles[email] = perfil
             save_perfiles(perfiles)
@@ -181,142 +181,81 @@ def calculadora():
     if not perfil:
         return redirect(url_for('login'))
 
-    # Plan basal
-    basal_plan = get_my_nutrition_plan(
-        perfil.get('peso') or 0,
-        perfil.get('altura') or 0,
-        perfil.get('edad') or 0,
-        perfil.get('sexo'),
-        perfil.get('actividad','sedentary'),
-        0,0,0,0,0,0,'no'
-    )
+    action = request.form.get('action')
 
-    # Distribución basal
-    distrib = {
-        'Desayuno': 0.25,
-        'Almuerzo': 0.25,
-        'Comida':   0.30,
-        'Cena':     0.20
-    }
-    basal_dist = {}
-    for meal, pct in distrib.items():
-        kcal = round(basal_plan['Total Calories'] * pct, 2)
-        basal_dist[meal] = {'calories': kcal, 'percent': round(pct*100,2)}
+    # Actualizar perfil (peso/actividad)
+    if action == 'update_profile':
+        perfil['peso']      = parse_float(request.form.get('peso'))
+        perfil['actividad'] = request.form.get('actividad','sedentary')
+        perfiles = load_perfiles()
+        perfiles[perfil['email']] = perfil
+        save_perfiles(perfiles)
+        session['perfil'] = perfil
 
-    # Consumido hoy
+    # Base del usuario
+    peso      = perfil.get('peso') or 0
+    altura    = perfil.get('altura') or 0
+    edad      = perfil.get('edad') or 0
+    sexo      = perfil.get('sexo') or 'male'
+    actividad = perfil.get('actividad') or 'sedentary'
+
+    # Plan basal (sin ejercicio) o ajustado
+    if action == 'exercise':
+        bh = parse_float(request.form.get('bike_hrs'))
+        bp = parse_float(request.form.get('bike_power'))
+        bt = parse_float(request.form.get('bike_threshold'))
+        rh = parse_float(request.form.get('run_hrs'))
+        rp = parse_float(request.form.get('run_pace'))
+        rt = parse_float(request.form.get('run_threshold'))
+        wl = request.form.get('weight_loss','no')
+        basal_plan = get_my_nutrition_plan(
+            peso, altura, edad, sexo, actividad,
+            bike_hrs=bh, bike_power=bp, bike_threshold=bt,
+            run_hrs=rh, run_pace=rp, run_threshold=rt,
+            weight_loss=wl
+        )
+    else:
+        basal_plan = get_my_nutrition_plan(
+            peso, altura, edad, sexo, actividad,
+            bike_hrs=0, bike_power=0, bike_threshold=0,
+            run_hrs=0, run_pace=0, run_threshold=0,
+            weight_loss='no'
+        )
+
+    # Consumo hoy
     fecha = datetime.today().date().isoformat()
     perfil.setdefault('comidas_diarias', {})
     comidas = perfil['comidas_diarias'].get(fecha, [])
-    consumido = {'Total Calories':0, 'CHO':0, 'Protein':0, 'Fat':0}
+    consumido = {'Total Calories':0,'CHO':0,'Protein':0,'Fat':0}
     for comida in comidas:
         for ing in comida.get('ingredientes', []):
             consumido['Total Calories'] += ing.get('calorias',0)
-            consumido['CHO']            += ing.get('carbohidratos',0)
-            consumido['Protein']        += ing.get('proteinas',0)
-            consumido['Fat']            += ing.get('grasas',0)
+            consumido['CHO']           += ing.get('carbohidratos',0)
+            consumido['Protein']       += ing.get('proteinas',0)
+            consumido['Fat']           += ing.get('grasas',0)
 
-    # Restante
-    restante = {k: max(0, round(v - consumido[k],2)) for k,v in basal_plan.items()}
+    restante = {
+        k: max(0, round(basal_plan[k] - consumido[k],2))
+        for k in ['Total Calories','CHO','Protein','Fat']
+    }
 
-    # Plan ajustado (POST)
-    adjusted_plan = None
-    if request.method == 'POST':
-        act = request.form.get('activity_level','sedentary')
-        bh  = parse_float(request.form.get('bike_hrs'))
-        bp  = parse_float(request.form.get('bike_power'))
-        bt  = parse_float(request.form.get('bike_threshold'))
-        rh  = parse_float(request.form.get('run_hrs'))
-        rp  = parse_float(request.form.get('run_pace'))
-        rt  = parse_float(request.form.get('run_threshold'))
-        wl  = request.form.get('weight_loss','no')
-
-        adjusted_plan = get_my_nutrition_plan(
-            perfil.get('peso') or 0,
-            perfil.get('altura') or 0,
-            perfil.get('edad') or 0,
-            perfil.get('sexo'),
-            act, bh, bp, bt, rh, rp, rt, wl
-        )
-        perfiles = load_perfiles()
-        perfil['plan_actual'] = adjusted_plan
-        perfiles[perfil['email']] = perfil
-        save_perfiles(perfiles)
-
-    return render_template(
-        'calculadora.html',
+    return render_template('calculadora.html',
         perfil=perfil,
         basal_plan=basal_plan,
-        basal_dist=basal_dist,
         consumido=consumido,
         restante=restante,
-        adjusted_plan=adjusted_plan,
         fecha=fecha
     )
 
-@app.route('/api/calcular', methods=['POST'])
-def api_calcular():
-    perfil = session.get('perfil')
-    if not perfil:
-        return jsonify({'error':'no autorizado'}), 401
-    data = request.get_json()
-    act = data.get('activity_level','sedentary')
-    bh  = parse_float(data.get('bike_hrs'))
-    bp  = parse_float(data.get('bike_power'))
-    bt  = parse_float(data.get('bike_threshold'))
-    rh  = parse_float(data.get('run_hrs'))
-    rp  = parse_float(data.get('run_pace'))
-    rt  = parse_float(data.get('run_threshold'))
-    wl  = data.get('weight_loss','no')
-
-    adjusted_plan = get_my_nutrition_plan(
-        perfil.get('peso') or 0,
-        perfil.get('altura') or 0,
-        perfil.get('edad') or 0,
-        perfil.get('sexo'),
-        act, bh, bp, bt, rh, rp, rt, wl
-    )
-    return jsonify({'adjusted_plan': adjusted_plan})
-
-# ————— Gestión de comidas —————
+# ————— Restaurar comidas —————
 
 @app.route('/guardar_comida', methods=['GET','POST'])
 def guardar_comida():
     perfil = session.get('perfil')
     if not perfil:
         return redirect(url_for('login'))
-
-    fecha = datetime.today().date().isoformat()
     mensaje = None
-    if request.method == 'POST':
-        nombre = request.form.get('nombre_comida','').strip()
-        ingredientes = []
-        for i in range(1, 4):
-            ing  = request.form.get(f'ingrediente{i}','').strip()
-            cant = parse_float(request.form.get(f'cantidad{i}'))
-            cal  = parse_float(request.form.get(f'calorias{i}'))
-            carb = parse_float(request.form.get(f'carbohidratos{i}'))
-            pro  = parse_float(request.form.get(f'proteinas{i}'))
-            fat  = parse_float(request.form.get(f'grasas{i}'))
-            if ing and cant and cal:
-                ingredientes.append({
-                    'nombre':        ing,
-                    'cantidad':      cant,
-                    'calorias':      cal,
-                    'carbohidratos': carb,
-                    'proteinas':     pro,
-                    'grasas':        fat
-                })
-        perfil.setdefault('comidas_diarias', {})\
-              .setdefault(fecha, []).append({
-                  'nombre_comida': nombre,
-                  'ingredientes':  ingredientes
-              })
-        perfiles = load_perfiles()
-        perfiles[perfil['email']] = perfil
-        save_perfiles(perfiles)
-        session['perfil'] = perfil
-        mensaje = f'Comida "{nombre}" guardada.'
-
+    # aquí podrías reimplementar la lógica de añadir ingredientes...
     return render_template('guardar_comida.html', mensaje=mensaje)
 
 @app.route('/ver_comidas')
@@ -324,7 +263,7 @@ def ver_comidas():
     perfil = session.get('perfil')
     if not perfil:
         return redirect(url_for('login'))
-    fecha  = datetime.today().date().isoformat()
+    fecha = datetime.today().date().isoformat()
     comidas = perfil.get('comidas_diarias', {}).get(fecha, [])
     return render_template('ver_comidas.html', comidas=comidas, fecha=fecha)
 

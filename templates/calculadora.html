@@ -3,228 +3,156 @@
 <head>
   <meta charset="UTF-8">
   <title>Calculadora Energética</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
   <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
-  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
-  <div class="container">
-    <header>
-      <h1>Hola, {{ perfil.nombre }} 👋</h1>
-    </header>
+<body class="bg-light">
 
-    <section>
-      <h2>Tu plan basal diario</h2>
-      <div class="plan-grid">
-        <div><strong>Calorías:</strong><br><span id="basal-cal">{{ basal_plan['Total Calories'] }}</span> kcal</div>
-        <div><strong>CHO:</strong><br><span id="basal-cho">{{ basal_plan['CHO'] }}</span> g</div>
-        <div><strong>Proteínas:</strong><br><span id="basal-pro">{{ basal_plan['Protein'] }}</span> g</div>
-        <div><strong>Grasas:</strong><br><span id="basal-fat">{{ basal_plan['Fat'] }}</span> g</div>
-      </div>
-    </section>
+<div class="container py-4">
 
-    <section>
-      <h2>Reparto energético por comidas</h2>
-      <ul class="lista-distrib">
-        {% for meal, info in basal_dist.items() %}
-          <li>{{ meal }}: {{ info.calories }} kcal ({{ info.percent }}%)</li>
-        {% endfor %}
-      </ul>
-    </section>
+  <!-- 1) FORMULARIO PERFIL -->
+  <form method="post" class="row gx-2 gy-3 align-items-end mb-4">
+    <input type="hidden" name="action" value="update_profile">
+    <div class="col-sm-4">
+      <label for="peso" class="form-label">Peso (kg)</label>
+      <input type="number" step="0.1" class="form-control" name="peso" id="peso"
+             value="{{ perfil.peso or '' }}" required>
+    </div>
+    <div class="col-sm-4">
+      <label for="actividad" class="form-label">Actividad</label>
+      <select name="actividad" id="actividad" class="form-select" required>
+        <option value="sedentary"        {{ perfil.actividad=='sedentary' and 'selected' }}>Sedentario</option>
+        <option value="lightly_active"   {{ perfil.actividad=='lightly_active' and 'selected' }}>Poco activo</option>
+        <option value="moderately_active"{{ perfil.actividad=='moderately_active' and 'selected' }}>Moderadamente activo</option>
+        <option value="very_active"      {{ perfil.actividad=='very_active' and 'selected' }}>Muy activo</option>
+        <option value="extra_active"     {{ perfil.actividad=='extra_active' and 'selected' }}>Extra activo</option>
+      </select>
+    </div>
+    <div class="col-sm-4 text-end">
+      <button type="submit" class="btn btn-primary w-100">
+        Guardar perfil
+      </button>
+    </div>
+  </form>
 
-    <section>
-      <h2>Seguimiento diario ({{ fecha }})</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Concepto</th><th>Calorías</th><th>CHO (g)</th><th>Proteínas (g)</th><th>Grasas (g)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>Plan basal</strong></td>
-            <td id="plan-cal">{{ basal_plan['Total Calories'] }}</td>
-            <td id="plan-cho">{{ basal_plan['CHO'] }}</td>
-            <td id="plan-pro">{{ basal_plan['Protein'] }}</td>
-            <td id="plan-fat">{{ basal_plan['Fat'] }}</td>
-          </tr>
-          <tr>
-            <td><strong>Consumido</strong></td>
-            <td id="cons-cal">{{ consumido['Total Calories'] }}</td>
-            <td id="cons-cho">{{ consumido['CHO'] }}</td>
-            <td id="cons-pro">{{ consumido['Protein'] }}</td>
-            <td id="cons-fat">{{ consumido['Fat'] }}</td>
-          </tr>
-          <tr>
-            <td><strong>Restante</strong></td>
-            <td id="rest-cal">{{ restante['Total Calories'] }}</td>
-            <td id="rest-cho">{{ restante['CHO'] }}</td>
-            <td id="rest-pro">{{ restante['Protein'] }}</td>
-            <td id="rest-fat">{{ restante['Fat'] }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-
-    <section class="chart-section">
-      <h2>Gráficos del día</h2>
-      <div class="chart-container">
-        <canvas id="caloriesChart"></canvas>
-      </div>
-      <div class="chart-container">
-        <canvas id="macrosChart"></canvas>
-      </div>
-    </section>
-
-    <section>
-      <h2>Calculadora avanzada (ejercicio)</h2>
-      <form id="exercise-form">
-        <label>
-          Nivel de actividad
-          <select name="activity_level">
-            <option value="sedentary">Sedentario</option>
-            <option value="lightly_active">Poco activo</option>
-            <option value="moderately_active" selected>Moderadamente activo</option>
-            <option value="very_active">Muy activo</option>
-            <option value="extra_active">Extra activo</option>
-          </select>
+  <!-- 2) BARRAS DE PROGRESO -->
+  <section class="mb-5">
+    <h2 class="h4 mb-3">Plan diario</h2>
+    {% for key,label,bar in [
+        ('Total Calories','Calorías','bg-success'),
+        ('CHO','CHO','bg-info'),
+        ('Protein','Proteínas','bg-warning'),
+        ('Fat','Grasas','bg-danger')
+      ] %}
+      {% set objetivo = basal_plan[key] %}
+      {% set usado    = consumido[key] %}
+      {% set pct      = (usado / objetivo * 100) if objetivo>0 else 0 %}
+      <div class="mb-3">
+        <label class="form-label">
+          {{ label }}: {{ usado }} / {{ objetivo }}
+          {{ 'kcal' if key=='Total Calories' else 'g' }}
         </label>
+        <div class="progress">
+          <div class="progress-bar {{ bar }}"
+               role="progressbar"
+               style="width:{{ '%.1f' % pct }}%;"
+               aria-valuenow="{{ usado }}"
+               aria-valuemin="0"
+               aria-valuemax="{{ objetivo }}">
+            {{ '%.1f' % pct }}%
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </section>
 
-        <fieldset>
-          <legend>Bicicleta</legend>
-          <label>Horas: <input type="number" name="bike_hrs" step="0.1" value="0"></label>
-          <label>Potencia (W): <input type="number" name="bike_power" step="1" value="0"></label>
-          <label>FTP (W): <input type="number" name="bike_threshold" step="1" value="0"></label>
-        </fieldset>
+  <!-- 3) TABLA DE SEGUIMIENTO -->
+  <section class="mb-5">
+    <h2 class="h5">Resumen diario ({{ fecha }})</h2>
+    <table class="table table-sm">
+      <thead>
+        <tr><th>Concepto</th><th>Calorías</th><th>CHO</th><th>Proteínas</th><th>Grasas</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Objetivo</strong></td>
+          <td>{{ basal_plan['Total Calories'] }}</td>
+          <td>{{ basal_plan['CHO'] }}</td>
+          <td>{{ basal_plan['Protein'] }}</td>
+          <td>{{ basal_plan['Fat'] }}</td>
+        </tr>
+        <tr>
+          <td><strong>Consumido</strong></td>
+          <td>{{ consumido['Total Calories'] }}</td>
+          <td>{{ consumido['CHO'] }}</td>
+          <td>{{ consumido['Protein'] }}</td>
+          <td>{{ consumido['Fat'] }}</td>
+        </tr>
+        <tr>
+          <td><strong>Restante</strong></td>
+          <td>{{ restante['Total Calories'] }}</td>
+          <td>{{ restante['CHO'] }}</td>
+          <td>{{ restante['Protein'] }}</td>
+          <td>{{ restante['Fat'] }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
 
-        <fieldset>
-          <legend>Carrera</legend>
-          <label>Horas: <input type="number" name="run_hrs" step="0.1" value="0"></label>
-          <label>Ritmo (min/km): <input type="number" name="run_pace" step="0.1" value="0"></label>
-          <label>Umbral: <input type="number" name="run_threshold" step="0.1" value="0"></label>
-        </fieldset>
+  <!-- 4) EJERCICIO -->
+  <section class="mb-5">
+    <h2 class="h5">Ajustar con ejercicio</h2>
+    <form method="post">
+      <input type="hidden" name="action" value="exercise">
+      <input type="hidden" name="activity_level" value="{{ perfil.actividad }}">
+      <div class="row">
+        <div class="col-md-6">
+          <fieldset class="border p-2 mb-3">
+            <legend class="w-auto px-2">Bicicleta</legend>
+            <label class="form-label">Horas:<input type="number" class="form-control mb-2" name="bike_hrs" step="0.1" value="0"></label>
+            <label class="form-label">Potencia (W):<input type="number" class="form-control mb-2" name="bike_power" step="1" value="0"></label>
+            <label class="form-label">FTP (W):<input type="number" class="form-control" name="bike_threshold" step="1" value="0"></label>
+          </fieldset>
+        </div>
+        <div class="col-md-6">
+          <fieldset class="border p-2 mb-3">
+            <legend class="w-auto px-2">Carrera</legend>
+            <label class="form-label">Horas:<input type="number" class="form-control mb-2" name="run_hrs" step="0.1" value="0"></label>
+            <label class="form-label">Ritmo (min/km):<input type="number" class="form-control mb-2" name="run_pace" step="0.1" value="0"></label>
+            <label class="form-label">Umbral:<input type="number" class="form-control" name="run_threshold" step="0.1" value="0"></label>
+          </fieldset>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label for="weight_loss" class="form-label">Pérdida/Ganancia peso</label>
+        <select class="form-select" name="weight_loss" id="weight_loss">
+          <option value="no" selected>Ninguno</option>
+          <option value="yes">Pérdida</option>
+          <option value="gain">Ganancia</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-success">Recalcular</button>
+    </form>
+  </section>
 
-        <label>
-          Pérdida/Ganancia peso
-          <select name="weight_loss">
-            <option value="no" selected>Ninguno</option>
-            <option value="yes">Pérdida</option>
-            <option value="gain">Ganancia</option>
-          </select>
-        </label>
-
-        <button type="submit">Recalcular</button>
-      </form>
-    </section>
-
-    <footer>
-      <a href="{{ url_for('guardar_comida') }}">➕ Añadir comida</a>
-      |
-      <a href="{{ url_for('ver_comidas') }}">📋 Ver comidas</a>
-      |
-      <a href="{{ url_for('logout') }}">🚪 Cerrar sesión</a>
-    </footer>
+  <!-- 5) ENLACES RÁPIDOS -->
+  <div class="text-center mb-4">
+    <a href="{{ url_for('guardar_comida') }}" class="me-3">➕ Añadir comida</a>
+    <a href="{{ url_for('ver_comidas') }}" class="me-3">📋 Ver comidas</a>
+    <a href="{{ url_for('logout') }}">🚪 Cerrar sesión</a>
   </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Inicializar gráficas
-      const calCtx = document.getElementById('caloriesChart').getContext('2d');
-      const macrosCtx = document.getElementById('macrosChart').getContext('2d');
+</div>
 
-      const caloriesChart = new Chart(calCtx, {
-        type: 'doughnut',
-        data: {
-          labels: ['Consumido','Restante'],
-          datasets: [{ data: [ +document.getElementById('cons-cal').textContent,
-                                +document.getElementById('rest-cal').textContent ] }]
-        },
-        options:{ responsive:true, title:{ display:true, text:'Progreso Calórico' } }
-      });
-
-      const macrosChart = new Chart(macrosCtx, {
-        type: 'bar',
-        data: {
-          labels: ['CHO','Proteínas','Grasas'],
-          datasets: [
-            { label:'Consumido',
-              data: [ +document.getElementById('cons-cho').textContent,
-                      +document.getElementById('cons-pro').textContent,
-                      +document.getElementById('cons-fat').textContent ] },
-            { label:'Restante',
-              data: [ +document.getElementById('rest-cho').textContent,
-                      +document.getElementById('rest-pro').textContent,
-                      +document.getElementById('rest-fat').textContent ] }
-          ]
-        },
-        options:{
-          responsive:true,
-          title:{ display:true, text:'Macros del Día' },
-          scales:{ x:{ stacked:true }, y:{ stacked:true } }
-        }
-      });
-
-      // Función para actualizar gráficas
-      function updateCharts(){
-        caloriesChart.data.datasets[0].data = [
-          +document.getElementById('cons-cal').textContent,
-          +document.getElementById('rest-cal').textContent
-        ];
-        caloriesChart.update();
-        macrosChart.data.datasets[0].data = [
-          +document.getElementById('cons-cho').textContent,
-          +document.getElementById('cons-pro').textContent,
-          +document.getElementById('cons-fat').textContent
-        ];
-        macrosChart.data.datasets[1].data = [
-          +document.getElementById('rest-cho').textContent,
-          +document.getElementById('rest-pro').textContent,
-          +document.getElementById('rest-fat').textContent
-        ];
-        macrosChart.update();
-      }
-
-      // Manejar formulario de ejercicio
-      document.getElementById('exercise-form')
-        .addEventListener('submit', async e => {
-          e.preventDefault();
-          const f = e.target;
-          const payload = {
-            activity_level: f.activity_level.value,
-            bike_hrs: +f.bike_hrs.value,
-            bike_power: +f.bike_power.value,
-            bike_threshold: +f.bike_threshold.value,
-            run_hrs: +f.run_hrs.value,
-            run_pace: +f.run_pace.value,
-            run_threshold: +f.run_threshold.value,
-            weight_loss: f.weight_loss.value
-          };
-          const res = await fetch('/api/calcular', {
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body: JSON.stringify(payload)
-          });
-          const json = await res.json();
-
-          // Actualizar tablas
-          document.getElementById('plan-cal').textContent = json.adjusted_plan['Total Calories'];
-          document.getElementById('plan-cho').textContent = json.adjusted_plan['CHO'];
-          document.getElementById('plan-pro').textContent = json.adjusted_plan['Protein'];
-          document.getElementById('plan-fat').textContent = json.adjusted_plan['Fat'];
-
-          // Recalcular restas
-          document.getElementById('rest-cal').textContent = 
-            Math.max(0,(json.adjusted_plan['Total Calories'] - +document.getElementById('cons-cal').textContent).toFixed(2));
-          document.getElementById('rest-cho').textContent = 
-            Math.max(0,(json.adjusted_plan['CHO'] - +document.getElementById('cons-cho').textContent).toFixed(2));
-          document.getElementById('rest-pro').textContent = 
-            Math.max(0,(json.adjusted_plan['Protein'] - +document.getElementById('cons-pro').textContent).toFixed(2));
-          document.getElementById('rest-fat').textContent = 
-            Math.max(0,(json.adjusted_plan['Fat'] - +document.getElementById('cons-fat').textContent).toFixed(2));
-
-          updateCharts();
-        });
-    });
-  </script>
+<!-- Bootstrap JS -->
+<script
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+</script>
 </body>
 </html>
