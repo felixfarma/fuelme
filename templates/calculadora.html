@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Calculadora Energética</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Hola, {{ perfil.nombre }} 👋</h1>
+    
+<!-- BLOQUE SUPERIOR COMPLETAMENTE CONTROLADO -->
+<div style="display: flex; justify-content: space-between; gap: 12px; margin: 20px 10px;">
+
+  <!-- Casillas (1/3) -->
+  <div style="flex: 0 0 33.3333%; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
+    <h6 class="text-center mb-2">Datos</h6>
+    <form method="post" class="row g-2">
+      <div class="col-12">
+        <label for="peso" class="form-label small">Peso (kg)</label>
+        <input type="number" step="0.1" class="form-control form-control-sm" name="peso" id="peso" value="{{ perfil.peso or '' }}">
+      </div>
+      <div class="col-12">
+        <label for="actividad" class="form-label small">Actividad</label>
+        <select class="form-select form-select-sm" name="activity_level" id="actividad">
+          <option value="sedentary" {% if perfil.actividad == 'sedentary' %}selected{% endif %}>Sedentario</option>
+          <option value="lightly_active" {% if perfil.actividad == 'lightly_active' %}selected{% endif %}>Ligera</option>
+          <option value="moderately_active" {% if perfil.actividad == 'moderately_active' %}selected{% endif %}>Moderada</option>
+          <option value="very_active" {% if perfil.actividad == 'very_active' %}selected{% endif %}>Alta</option>
+          <option value="extra_active" {% if perfil.actividad == 'extra_active' %}selected{% endif %}>Muy alta</option>
+        </select>
+      </div>
+      <div class="col-12">
+        <label for="weight_loss" class="form-label small">Objetivo</label>
+        <select class="form-select form-select-sm" name="weight_loss" id="weight_loss">
+          <option value="no">Mantener</option>
+          <option value="yes">Perder peso</option>
+          <option value="gain">Ganar peso</option>
+        </select>
+      </div>
+    </form>
+  </div>
+
+  <!-- Donut (1/3) -->
+  <div style="flex: 0 0 33.3333%; border: 1px solid #ddd; border-radius: 8px; padding: 10px; text-align: center;">
+    <h6>Kcal diarias</h6>
+    <canvas id="kcalDonut" style="width: 100%; max-height: 130px; object-fit: contain;"></canvas>
+    <div class="small mt-2"><strong>{{ consumido['Total Calories'] }} / {{ basal_plan['Total Calories'] }} kcal</strong></div>
+  </div>
+
+  <!-- Barras horizontales (1/3) -->
+  <div style="flex: 0 0 33.3333%; border: 1px solid #ddd; border-radius: 8px; padding: 10px; text-align: center;">
+    <h6>Macros</h6>
+    <canvas id="macrosChart" style="width: 100%; max-height: 130px; object-fit: contain;"></canvas>
+    <div class="small mt-2">CHO / Proteínas / Grasas</div>
+  </div>
+
+</div>
+
+
+    </header>
+
+    <section>
+      <h2>Tu plan basal diario</h2>
+      <div class="plan-grid">
+        <div><strong>Calorías:</strong><br><span id="basal-cal">{{ basal_plan['Total Calories'] }}</span> kcal</div>
+        <div><strong>CHO:</strong><br><span id="basal-cho">{{ basal_plan['CHO'] }}</span> g</div>
+        <div><strong>Proteínas:</strong><br><span id="basal-pro">{{ basal_plan['Protein'] }}</span> g</div>
+        <div><strong>Grasas:</strong><br><span id="basal-fat">{{ basal_plan['Fat'] }}</span> g</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Reparto energético por comidas</h2>
+      <ul class="lista-distrib">
+        {% for meal, info in basal_dist.items() %}
+          <li>{{ meal }}: {{ info.calories }} kcal ({{ info.percent }}%)</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section>
+      <h2>Seguimiento diario ({{ fecha }})</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Concepto</th><th>Calorías</th><th>CHO (g)</th><th>Proteínas (g)</th><th>Grasas (g)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Plan basal</strong></td>
+            <td id="plan-cal">{{ basal_plan['Total Calories'] }}</td>
+            <td id="plan-cho">{{ basal_plan['CHO'] }}</td>
+            <td id="plan-pro">{{ basal_plan['Protein'] }}</td>
+            <td id="plan-fat">{{ basal_plan['Fat'] }}</td>
+          </tr>
+          <tr>
+            <td><strong>Consumido</strong></td>
+            <td id="cons-cal">{{ consumido['Total Calories'] }}</td>
+            <td id="cons-cho">{{ consumido['CHO'] }}</td>
+            <td id="cons-pro">{{ consumido['Protein'] }}</td>
+            <td id="cons-fat">{{ consumido['Fat'] }}</td>
+          </tr>
+          <tr>
+            <td><strong>Restante</strong></td>
+            <td id="rest-cal">{{ restante['Total Calories'] }}</td>
+            <td id="rest-cho">{{ restante['CHO'] }}</td>
+            <td id="rest-pro">{{ restante['Protein'] }}</td>
+            <td id="rest-fat">{{ restante['Fat'] }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="chart-section">
+      <h2>Gráficos del día</h2>
+      <div class="chart-container">
+        <canvas id="caloriesChart"></canvas>
+      </div>
+      <div class="chart-container">
+        <canvas id="macrosChart"></canvas>
+      </div>
+    </section>
+
+    <section>
+      <h2>Calculadora avanzada (ejercicio)</h2>
+      <form id="exercise-form">
+        <label>
+          Nivel de actividad
+          <select name="activity_level">
+            <option value="sedentary">Sedentario</option>
+            <option value="lightly_active">Poco activo</option>
+            <option value="moderately_active" selected>Moderadamente activo</option>
+            <option value="very_active">Muy activo</option>
+            <option value="extra_active">Extra activo</option>
+          </select>
+        </label>
+
+        <fieldset>
+          <legend>Bicicleta</legend>
+          <label>Horas: <input type="number" name="bike_hrs" step="0.1" value="0"></label>
+          <label>Potencia (W): <input type="number" name="bike_power" step="1" value="0"></label>
+          <label>FTP (W): <input type="number" name="bike_threshold" step="1" value="0"></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Carrera</legend>
+          <label>Horas: <input type="number" name="run_hrs" step="0.1" value="0"></label>
+          <label>Ritmo (min/km): <input type="number" name="run_pace" step="0.1" value="0"></label>
+          <label>Umbral: <input type="number" name="run_threshold" step="0.1" value="0"></label>
+        </fieldset>
+
+        <label>
+          Pérdida/Ganancia peso
+          <select name="weight_loss">
+            <option value="no" selected>Ninguno</option>
+            <option value="yes">Pérdida</option>
+            <option value="gain">Ganancia</option>
+          </select>
+        </label>
+
+        <button type="submit">Recalcular</button>
+      </form>
+    </section>
+
+    <footer>
+      <a href="{{ url_for('guardar_comida') }}">➕ Añadir comida</a>
+      |
+      <a href="{{ url_for('ver_comidas') }}">📋 Ver comidas</a>
+      |
+      <a href="{{ url_for('logout') }}">🚪 Cerrar sesión</a>
+    </footer>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Inicializar gráficas
+const donutCtx = document.getElementById('kcalDonut')?.getContext('2d');
+    if (donutCtx) {
+      new Chart(donutCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Consumido', 'Restante'],
+          datasets: [{
+            data: [
+              +document.getElementById('cons-cal').textContent,
+              +document.getElementById('rest-cal').textContent
+            ],
+            backgroundColor: ['#36a2eb', '#e2e2e2']
+          }]
+        },
+        options: {
+          cutout: '70%',
+          responsive: true,
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+      const calCtx = document.getElementById('caloriesChart').getContext('2d');
+      const macrosCtx = document.getElementById('macrosChart').getContext('2d');
+
+      const caloriesChart = new Chart(calCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Consumido','Restante'],
+          datasets: [{ data: [ +document.getElementById('cons-cal').textContent,
+                                +document.getElementById('rest-cal').textContent ] }]
+        },
+        options:{ responsive:true, title:{ display:true, text:'Progreso Calórico' } }
+      });
+
+      const macrosChart = new Chart(macrosCtx, {
+  type: 'bar',
+  data: {
+    labels: ['CHO','Proteínas','Grasas'],
+    datasets: [
+      {
+        label: 'Consumido',
+        data: [
+          +document.getElementById('cons-cho').textContent,
+          +document.getElementById('cons-pro').textContent,
+          +document.getElementById('cons-fat').textContent
+        ],
+        backgroundColor: ['#4cc9f0', '#90be6d', '#f94144']
+      },
+      {
+        label: 'Restante',
+        data: [
+          +document.getElementById('rest-cho').textContent,
+          +document.getElementById('rest-pro').textContent,
+          +document.getElementById('rest-fat').textContent
+        ],
+        backgroundColor: ['#bde0fe', '#caffbf', '#ffc9c9']
+      }
+    ]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    plugins: {
+      title: { display: true, text: 'Macros del Día', font: { size: 14 } },
+      legend: { position: 'bottom' }
+    },
+    scales: {
+      x: { stacked: true, beginAtZero: true },
+      y: { stacked: true }
+    }
+  }
+});
+
+      // Función para actualizar gráficas
+      function updateCharts(){
+        caloriesChart.data.datasets[0].data = [
+          +document.getElementById('cons-cal').textContent,
+          +document.getElementById('rest-cal').textContent
+        ];
+        caloriesChart.update();
+        macrosChart.data.datasets[0].data = [
+          +document.getElementById('cons-cho').textContent,
+          +document.getElementById('cons-pro').textContent,
+          +document.getElementById('cons-fat').textContent
+        ];
+        macrosChart.data.datasets[1].data = [
+          +document.getElementById('rest-cho').textContent,
+          +document.getElementById('rest-pro').textContent,
+          +document.getElementById('rest-fat').textContent
+        ];
+        macrosChart.update();
+
+      }
+
+      // Manejar formulario de ejercicio
+      document.getElementById('exercise-form')
+        .addEventListener('submit', async e => {
+          e.preventDefault();
+          const f = e.target;
+          const payload = {
+            activity_level: f.activity_level.value,
+            bike_hrs: +f.bike_hrs.value,
+            bike_power: +f.bike_power.value,
+            bike_threshold: +f.bike_threshold.value,
+            run_hrs: +f.run_hrs.value,
+            run_pace: +f.run_pace.value,
+            run_threshold: +f.run_threshold.value,
+            weight_loss: f.weight_loss.value
+          };
+          const res = await fetch('/api/calcular', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(payload)
+          });
+          const json = await res.json();
+
+          // Actualizar tablas
+          document.getElementById('plan-cal').textContent = json.adjusted_plan['Total Calories'];
+          document.getElementById('plan-cho').textContent = json.adjusted_plan['CHO'];
+          document.getElementById('plan-pro').textContent = json.adjusted_plan['Protein'];
+          document.getElementById('plan-fat').textContent = json.adjusted_plan['Fat'];
+
+          // Recalcular restas
+          document.getElementById('rest-cal').textContent = 
+            Math.max(0,(json.adjusted_plan['Total Calories'] - +document.getElementById('cons-cal').textContent).toFixed(2));
+          document.getElementById('rest-cho').textContent = 
+            Math.max(0,(json.adjusted_plan['CHO'] - +document.getElementById('cons-cho').textContent).toFixed(2));
+          document.getElementById('rest-pro').textContent = 
+            Math.max(0,(json.adjusted_plan['Protein'] - +document.getElementById('cons-pro').textContent).toFixed(2));
+          document.getElementById('rest-fat').textContent = 
+            Math.max(0,(json.adjusted_plan['Fat'] - +document.getElementById('cons-fat').textContent).toFixed(2));
+
+          updateCharts();
+        });
+    });
+  </script>
+</body>
+</html>
