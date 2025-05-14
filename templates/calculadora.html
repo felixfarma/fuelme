@@ -317,5 +317,36 @@ const donutCtx = document.getElementById('kcalDonut')?.getContext('2d');
         });
     });
   </script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const pesoInput = document.getElementById("peso");
+  const actividadInput = document.getElementById("actividad");
+  const objetivoInput = document.getElementById("weight_loss");
+
+  const actualizar = () => {
+    fetch("/actualizar_datos_usuario", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        peso: pesoInput.value,
+        actividad: actividadInput.value,
+        objetivo: objetivoInput.value
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("rest-cal").textContent = data["Total Calories"];
+      document.getElementById("rest-cho").textContent = data["CHO"];
+      document.getElementById("rest-pro").textContent = data["Proteínas"];
+      document.getElementById("rest-fat").textContent = data["Grasas"];
+      location.reload();  // Opcional: se puede sustituir por redibujar gráficos
+    });
+  };
+
+  pesoInput.addEventListener("change", actualizar);
+  actividadInput.addEventListener("change", actualizar);
+  objetivoInput.addEventListener("change", actualizar);
+});
+</script>
 </body>
 </html>

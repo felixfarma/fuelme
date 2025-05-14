@@ -107,6 +107,37 @@ def parse_float(v):
 
 @app.route('/actualizar_datos_usuario', methods=['POST'])
 def actualizar_datos_usuario():
+
+    if request.headers.get('Content-Type') == 'application/json':
+        print("🔄 Recibida petición JSON para actualizar_datos_usuario")
+        data = request.get_json()
+        print("📥 Datos recibidos:", data)
+        perfil = session.get("perfil", {})
+
+        # Actualizar datos enviados desde el frontend
+        perfil["peso"] = float(data.get("peso", perfil.get("peso", 70)))
+        perfil["actividad"] = data.get("actividad", perfil.get("actividad", "sedentary"))
+        perfil["objetivo"] = data.get("objetivo", perfil.get("objetivo", "no"))
+        session["perfil"] = perfil
+
+        # Extraer todos los argumentos que requiere get_my_nutrition_plan
+        peso = perfil.get("peso", 70)
+        h = perfil.get("altura", 170)
+        age = perfil.get("edad", 30)
+        sex = perfil.get("sexo", "male")
+        act = perfil.get("actividad", "sedentary")
+        bike_hrs = perfil.get("bike_hrs", 0)
+        bike_power = perfil.get("bike_power", 0)
+        bike_threshold = perfil.get("bike_threshold", 0)
+        run_hrs = perfil.get("run_hrs", 0)
+        run_pace = perfil.get("run_pace", 0)
+        run_threshold = perfil.get("run_threshold", 0)
+
+        # Recalcular plan y devolver JSON
+        nuevo_plan = get_my_nutrition_plan(peso, h, age, sex, act, bike_hrs, bike_power, bike_threshold, run_hrs, run_pace, run_threshold)
+        print("📤 Plan recalculado:", nuevo_plan)
+        return jsonify(nuevo_plan)
+
     perfil = session.get('perfil')
     if not perfil:
         return redirect(url_for('login'))
